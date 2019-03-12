@@ -1,0 +1,1 @@
+SELECT json_object_agg(filename, h) FROM migration.history h;
