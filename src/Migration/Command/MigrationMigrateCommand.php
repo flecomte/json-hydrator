@@ -71,7 +71,7 @@ class MigrationMigrateCommand extends Command
             if (!$input->getOption('force')) {
                 $output->write($outputStatus->fetch());
                 $helper   = $this->getHelper('question');
-                $question = new ConfirmationQuestion('Do you want to execute migrations ? [Y/n]', true);
+                $question = new ConfirmationQuestion('<question>Do you want to execute migrations ?</question> [Y/n]', true);
 
                 if (!$helper->ask($input, $output, $question)) {
                     return 0;

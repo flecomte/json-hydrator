@@ -13,6 +13,7 @@ use function array_key_exists;
 use function array_keys;
 use function array_merge;
 use function count;
+use function current;
 use function file_exists;
 use function file_get_contents;
 use function file_put_contents;
@@ -29,6 +30,7 @@ use function str_replace;
 use function strlen;
 use function substr;
 use function substr_count;
+use const PATHINFO_DIRNAME;
 use const SORT_STRING;
 
 class Migration extends MigrationAbstract
@@ -48,13 +50,13 @@ class Migration extends MigrationAbstract
      *
      * @param Connection      $connection
      * @param string          $migrationDirectory
-     * @param string          $requestDirectory
+     * @param string          $requestMigrationDirectory
      * @param LoggerInterface $logger
      * @param string          $dateFormat
      */
-    public function __construct(Connection $connection, string $migrationDirectory, ?string $requestDirectory, LoggerInterface $logger, string $dateFormat = 'Y-m/Y-m-d_H-i-s')
+    public function __construct(Connection $connection, string $migrationDirectory, ?string $requestMigrationDirectory, LoggerInterface $logger, string $dateFormat = 'Y-m/Y-m-d_H-i-s')
     {
-        parent::__construct($connection, $requestDirectory, $logger);
+        parent::__construct($connection, $requestMigrationDirectory, $logger);
         $this->migrationDirectory = $migrationDirectory;
         $this->dateFormat         = $dateFormat;
     }
@@ -169,7 +171,7 @@ class Migration extends MigrationAbstract
                 /* Execute migrations */
                 $this->logger->info("Execute migration '$upFilename'", ['request' => $upSql]);
                 $this->connection->exec($upSql);
-                $this->connection->prepare(file_get_contents($this->requestDirectory.'/insert.sql'))
+                $this->connection->prepare(file_get_contents($this->requestMigrationDirectory.'/insert.sql'))
                     ->execute([
                         ':filename' => $upFilename,
                         ':up'       => $upSql,
@@ -210,15 +212,16 @@ class Migration extends MigrationAbstract
          * (If the file does not exist but is present in DB)
          */
         $toDownMigrations = [];
+        $firstVersion = current($this->getExecutedMigration())['version'];
         foreach ($this->getExecutedMigration() as $upFilename => $migration) {
             /* If version is defined, force down */
-            if ($version !== null && $migration['version'] >= $version) {
+            if ($version !== null && $migration['version'] >= $version && $migration['version'] > $firstVersion) {
                 $toDownMigrations[$upFilename] = $migration['down'];
                 continue;
             }
 
             $upMigrationFiles = $this->getUpMigrationsFiles();
-            if (!in_array($upFilename, $upMigrationFiles) && $migration['version'] > 1) {
+            if (!in_array($upFilename, $upMigrationFiles) && $migration['version'] > $firstVersion) {
                 $toDownMigrations[$upFilename] = $migration['down'];
             }
         }
@@ -230,7 +233,7 @@ class Migration extends MigrationAbstract
         foreach ($toDownMigrations as $upFilename => $sqlDown) {
             try {
                 $this->connection->exec($sqlDown);
-                $this->connection->prepare(file_get_contents($this->requestDirectory.'/delete.sql'))
+                $this->connection->prepare(file_get_contents($this->requestMigrationDirectory.'/delete.sql'))
                     ->execute([':filename' => $upFilename]);
                 $list[$upFilename] = $this->getDownMigrationExist($upFilename) ? -1 : -2;
             } catch (Throwable $e) {
@@ -253,6 +256,7 @@ class Migration extends MigrationAbstract
      */
     public function status(?array &$list = [], ?string &$error = null)
     {
+        $list = $list ?? [];
         $this->connection->beginTransaction();
         $this->createTable();
         $migrations    = $this->getExecutedMigration();
@@ -412,7 +416,7 @@ class Migration extends MigrationAbstract
      */
     protected function createTable(): int
     {
-        $sql = file_get_contents($this->requestDirectory.'/createTable.sql');
+        $sql = file_get_contents($this->requestMigrationDirectory.'/createTable.sql');
         $this->logger->debug('Init Table Migration', ['request' => $sql]);
 
         return $this->connection->exec($sql);
@@ -420,7 +424,7 @@ class Migration extends MigrationAbstract
 
     protected function getExecutedMigration(): array
     {
-        return $this->connection->prepare(file_get_contents($this->requestDirectory.'/findAll.sql'))->fetchAsArray();
+        return $this->connection->prepare(file_get_contents($this->requestMigrationDirectory.'/findAll.sql'))->fetchAsArray();
     }
 
     protected function sqlIsEmpty(string $sql): bool

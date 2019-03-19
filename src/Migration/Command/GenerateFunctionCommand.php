@@ -11,7 +11,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class GenerateFunctionCommand extends Command
 {
-    protected static $defaultName = 'migration:generate:function';
+    protected static $defaultName = 'migration:generate:request';
 
     /**
      * @var MigrationFunctions
@@ -31,8 +31,9 @@ class GenerateFunctionCommand extends Command
 
     protected function configure()
     {
-        $this->setDescription('Generate the blank function with the right name.')
-            ->addArgument('name', InputArgument::REQUIRED, 'Add name to the generated function');
+        $this->setDescription('Generate the blank function and request with the right name.')
+            ->addArgument('entity', InputArgument::REQUIRED, 'Name of entity')
+            ->addArgument('request', InputArgument::REQUIRED, 'Name of request');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -40,7 +41,7 @@ class GenerateFunctionCommand extends Command
         $table = new Table($output);
         $table->setHeaderTitle('Generated files');
         $table->setHeaders(['Filename']);
-        foreach ($this->migrationFunctions->generateFile($input->getArgument('name')) as $filename) {
+        foreach ($this->migrationFunctions->generateFile($input->getArgument('entity'), $input->getArgument('request')) as $filename) {
             $table->addRow([$filename]);
         }
         $table->render();

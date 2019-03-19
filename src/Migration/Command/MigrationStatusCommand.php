@@ -55,7 +55,12 @@ class MigrationStatusCommand extends Command
         $table->setHeaders(['Migration scripts', 'Status', 'Up', 'Down', 'Version']);
 
         foreach ($migrations as $filename => $infos) {
-            $status = $infos['executed'] ? '<info>executed</info>' : '<error>not executed</error>';
+            if ($infos['executed']) {
+                $status = '<info>executed</info>';
+            } else {
+                $status = '<error>not executed</error>';
+                $isUpToDate = false;
+            }
 
             if ($infos['up'] === false) {
                 $up         = '<error>SQL Error</error>';

@@ -16,6 +16,7 @@ use function class_implements;
 use function file_exists;
 use function get_class;
 use function in_array;
+use function is_iterable;
 use function preg_match;
 use function ucfirst;
 
@@ -141,34 +142,42 @@ abstract class AbstractRepository implements RepositoryInterface
     }
 
     /**
-     * @param string   $fqn
+     * @param string $fqn
      * @param int|null $limit
      * @param int|null $page
+     * @param array $extraParams
      *
      * @return Pagerfanta
      */
-    protected function genericFindAllPaginated(string $fqn, int $limit = null, int $page = null): Pagerfanta
+    protected function genericFindAllPaginated(string $fqn, int $limit = null, int $page = null, array $extraParams = []): Pagerfanta
     {
-        $entities = $this->genericFindAll($fqn, $limit, self::calculatePagination($limit, $page), $count = 0);
+        $count = 0;
+        $entities = $this->genericFindAll($fqn, $limit, self::calculatePagination($limit, $page), $count, $extraParams);
 
         return self::paginate($entities, $count, $limit, $page);
     }
 
     /**
-     * @param string   $fqn
-     * @param int      $limit
+     * @param string $fqn
+     * @param int $limit
      * @param int|null $offset
      * @param int|null $count
+     * @param array $extraParams
      *
      * @return UuidEntityInterface[]
      */
-    protected function genericFindAll(string $fqn, int $limit = null, int $offset = null, int &$count = null): array
+    protected function genericFindAll(string $fqn, int $limit = null, int $offset = null, int &$count = null, array $extraParams = []): array
     {
         $limit  = $limit ?? 200;
         $offset = $offset ?? 0;
         $stmt   = $this->prepareRequest('findAll');
         $stmt->bindParam('limit', $limit);
         $stmt->bindParam('offset', $offset);
+        if (is_iterable($extraParams)) {
+            foreach ($extraParams as $name => $value) {
+                $stmt->bindValue($name, $value);
+            }
+        }
 
         return $stmt->fetchEntities($fqn, $count);
     }
@@ -230,6 +239,22 @@ abstract class AbstractRepository implements RepositoryInterface
         $stmt->bindParam($field, $value);
 
         return $stmt->fetchEntity($fqn);
+    }
+
+    /**
+     * @param mixed  $value
+     * @param string $field
+     *
+     * @return array
+     *
+     * @throws NotFoundException
+     */
+    protected function genericFindByAsArray($value, $field): array
+    {
+        $stmt = $this->prepareRequest('findBy'.ucfirst($field));
+        $stmt->bindParam($field, $value);
+
+        return $stmt->fetchAsArray();
     }
 
     /**

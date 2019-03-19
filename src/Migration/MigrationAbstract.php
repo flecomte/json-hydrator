@@ -16,7 +16,7 @@ abstract class MigrationAbstract
     /**
      * @var string
      */
-    protected $requestDirectory;
+    protected $requestMigrationDirectory;
 
     /**
      * @var Connection
@@ -28,19 +28,24 @@ abstract class MigrationAbstract
      */
     protected $logger;
 
+    public static function camelToSnack($input)
+    {
+        return ltrim(strtolower(preg_replace('/[A-Z]([A-Z](?![a-z]))*/', '_$0', $input)), '_');
+    }
+
     /**
      * Migration constructor.
      *
      * @param Connection      $connection
-     * @param string          $requestDirectory
+     * @param string          $requestMigrationDirectory
      * @param LoggerInterface $logger
      */
-    public function __construct(Connection $connection, ?string $requestDirectory, LoggerInterface $logger)
+    public function __construct(Connection $connection, ?string $requestMigrationDirectory, LoggerInterface $logger)
     {
-        if ($requestDirectory === null || empty($requestDirectory)) {
-            $requestDirectory = __DIR__.'/sql/request';
+        if ($requestMigrationDirectory === null || empty($requestMigrationDirectory)) {
+            $requestMigrationDirectory = __DIR__.'/sql/request';
         }
-        $this->requestDirectory   = $requestDirectory;
+        $this->requestMigrationDirectory   = $requestMigrationDirectory;
         $this->connection         = $connection;
         $this->logger             = $logger;
     }
@@ -72,7 +77,7 @@ abstract class MigrationAbstract
     protected function getNextVersion(): ?int
     {
         if (self::$version === null) {
-            $stmt = $this->connection->prepare(file_get_contents($this->requestDirectory.'/getNextVersion.sql'));
+            $stmt = $this->connection->prepare(file_get_contents($this->requestMigrationDirectory.'/getNextVersion.sql'));
             $stmt->execute();
             $version = $stmt->fetchColumn();
 

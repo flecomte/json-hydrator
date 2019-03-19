@@ -22,8 +22,8 @@ use function preg_match;
 use function preg_match_all;
 use function str_replace;
 use function strtolower;
+use function strtoupper;
 use function trim;
-use const PATHINFO_BASENAME;
 use const PATHINFO_DIRNAME;
 use const SORT_STRING;
 
@@ -35,51 +35,82 @@ class MigrationFunctions extends MigrationAbstract
     protected $functionsDirectory;
 
     /**
+     * @var string|null
+     */
+    private $requestDirectory;
+
+    /**
      * Migration constructor.
      *
      * @param Connection      $connection
      * @param string          $requestDirectory
      * @param string          $functionsDirectory
+     * @param string          $requestMigrationDirectory
      * @param LoggerInterface $logger
      */
-    public function __construct(Connection $connection, ?string $requestDirectory, string $functionsDirectory, LoggerInterface $logger)
+    public function __construct(Connection $connection, string $requestDirectory, string $functionsDirectory, ?string $requestMigrationDirectory, LoggerInterface $logger)
     {
-        parent::__construct($connection, $requestDirectory, $logger);
+        parent::__construct($connection, $requestMigrationDirectory, $logger);
         $this->functionsDirectory = $functionsDirectory;
+        $this->requestDirectory   = $requestDirectory;
     }
 
     /**
      * Generate the blank file with the right name.
      *
-     * @param string $name
+     * @param string|null $entity
+     * @param string|null $request
      *
      * @return array
      */
-    public function generateFile(string $name = null): array
+    public function generateFile(string $entity = null, string $request = null): array
     {
-        $directoryName = pathinfo($this->functionsDirectory.'/'.$name, PATHINFO_DIRNAME);
-        $functionName  = strtolower(pathinfo($this->functionsDirectory.'/'.$name, PATHINFO_BASENAME));
-        if (!is_dir($directoryName)) {
-            mkdir($directoryName, 0755, true);
+        $functionDirectoryName = pathinfo($this->functionsDirectory.'/'.$entity, PATHINFO_DIRNAME);
+        if (!is_dir($this->functionsDirectory.'/'.$entity)) {
+            mkdir($this->functionsDirectory.'/'.$entity, 0755, true);
+        }
+        if (!is_dir($this->requestDirectory.'/'.$entity)) {
+            mkdir($this->requestDirectory.'/'.$entity, 0755, true);
         }
 
-        $filename   = "$this->functionsDirectory/$name.sql";
+        $table = self::camelToSnack($entity);
+        $filename = $entity.'/'.$request;
+        $functionName  = strtolower(str_replace('/', '_', $entity.'/'.self::camelToSnack($request)));
+
+        $functionFilename   = "$this->functionsDirectory/$filename.sql";
+        $requestFilename   = "$this->requestDirectory/$filename.sql";
 
         $sql = <<<SQL
-CREATE OR REPLACE FUNCTION $functionName (_my_param TEXT DEFAULT 'hello') RETURNS jsonb
+CREATE OR REPLACE FUNCTION $functionName (_uuid uuid) RETURNS json
   LANGUAGE plpgsql
   PARALLEL SAFE
 AS $$
 DECLARE
-  _my_param_bis int = 0;
+  result json;
 BEGIN
-  -- SQL HERE
+  SELECT to_json(t) INTO result
+    FROM
+    (
+      SELECT
+        *
+      FROM $table
+      WHERE uuid = _uuid
+    ) t;
+
+    RETURN result;
 END;
 $$;
 SQL;
-        file_put_contents($filename, $sql);
+        file_put_contents($functionFilename, $sql);
 
-        return [$filename];
+        $requestSQL = <<<SQL
+SELECT * FROM $functionName(:uuid)
+SQL;
+
+
+        file_put_contents($requestFilename, $requestSQL);
+
+        return [$functionFilename, $requestFilename];
     }
 
     /**
@@ -153,7 +184,7 @@ SQL;
             /* If function already exist in DB */
             if ($alreadyExist) {
                 $oldFunctionContent = $executedFunctions[$filename]['up'];
-                $oldDefinition      = $executedFunctions[$filename]['up'];
+                $oldDefinition      = $this->getDefinition($oldFunctionContent);;
 
                 /* Execute ONLY if function has changed (definition and content) */
                 if ($oldFunctionContent === $newFunctionContent) {
@@ -166,7 +197,7 @@ SQL;
                  * So, try to remove and recreate the function
                  */
                 if ($oldDefinition != $newDefinition) {
-                    $this->logger->warning("Remove $oldDefinition and recreate $newDefinition");
+                    $this->logger->warning("Remove and recreate:\n    $oldDefinition\n    $newDefinition");
                     $deleteSQL = $this->getDeleteFunctionRequest($oldFunctionContent);
                     try {
                         $this->connection->exec($deleteSQL);
@@ -183,7 +214,7 @@ SQL;
             try {
                 $deleteSQL = $this->getDeleteFunctionRequest($newFunctionContent);
                 $this->connection->exec($newFunctionContent);
-                $this->connection->prepare(file_get_contents($this->requestDirectory.'/upsertFunctions.sql'))
+                $this->connection->prepare(file_get_contents($this->requestMigrationDirectory.'/upsertFunctions.sql'))
                     ->execute([
                         ':filename'   => $filename,
                         ':definition' => $newDefinition,
@@ -222,7 +253,7 @@ SQL;
                     $this->logger->info("Remove old function: $currentDefinition");
                     $this->connection->exec($currentDown);
 
-                    $this->connection->prepare(file_get_contents($this->requestDirectory.'/deleteFunctions.sql'))
+                    $this->connection->prepare(file_get_contents($this->requestMigrationDirectory.'/deleteFunctions.sql'))
                         ->execute([':filename' => $filename]);
 
                     $list[$filename] = -1;
@@ -305,7 +336,7 @@ SQL;
      */
     protected function createTable(): int
     {
-        $sql = file_get_contents($this->requestDirectory.'/createTableFunctions.sql');
+        $sql = file_get_contents($this->requestMigrationDirectory.'/createTableFunctions.sql');
         $this->logger->debug('Init Table Migration Functions', ['request' => $sql]);
 
         return $this->connection->exec($sql);
@@ -313,21 +344,32 @@ SQL;
 
     protected function getExecutedFunctions(): array
     {
-        return $this->connection->prepare(file_get_contents($this->requestDirectory.'/findAllFunctions.sql'))->fetchAsArray();
+        return $this->connection->prepare(file_get_contents($this->requestMigrationDirectory.'/findAllFunctions.sql'))->fetchAsArray();
     }
 
     protected function getDefinition(string $functionContent)
     {
-        ['name' => $name, 'params' => $params, 'types' => $types, 'return' => $return] = $this->getDefinitionMatches($functionContent);
+        ['name' => $name, 'params' => $params, 'return' => $return] = $this->getDefinitionMatches($functionContent);
 
-        return "$name ($params) $return";
+        $paramsList = implode(', ', array_map('trim', $params));
+
+        return "$name ($paramsList) $return";
     }
 
     protected function getDefinitionShort(string $functionContent)
     {
-        ['name' => $name, 'params' => $params, 'types' => $types] = $this->getDefinitionMatches($functionContent);
+        ['name' => $name, 'directions' => $directions, 'types' => $types] = $this->getDefinitionMatches($functionContent);
 
-        return "$name ($types)";
+        /* Remove OUT parameters */
+        foreach ($directions as $key => $direction) {
+            if (strtoupper($direction) === 'OUT') {
+                unset($types[$key]);
+            }
+        }
+
+        $typesList  = implode(', ', array_map('trim', $types));
+
+        return "$name ($typesList)";
     }
 
     protected function getDeleteFunctionRequest(string $functionContent)
@@ -376,23 +418,22 @@ SQL;
     private function getDefinitionMatches(string $functionContent)
     {
         /* find function name and params */
-        preg_match('`create .*(procedure|function) *(?<name>[^\(\s]+)\s*\((?<params>(\s*((IN|OUT|INOUT|VARIADIC)?\s+)?([^\s,\)]+\s+)?([^\s,\)]+)(\s+(?:default\s|=)\s*[^\s,\)]+)?\s*(,|(?=\))))*)\) *(?<return>RETURNS *[^ ]+)`mi', $functionContent, $matchs);
+        preg_match('`create .*(procedure|function) *(?<name>[^\(\s]+)\s*\((?<params>(\s*((IN|OUT|INOUT|VARIADIC)?\s+)?([^\s,\)]+\s+)?([^\s,\)]+)(\s+(?:default\s|=)\s*[^\s,\)]+)?\s*(,|(?=\))))*)\) *(?<return>RETURNS *[^ ]+)?`mi', $functionContent, $matchs);
         $name   = trim($matchs['name']);
         $params = trim($matchs['params']);
-        $return = trim($matchs['return']);
+        $return = isset($matchs['return']) ? trim($matchs['return']) : '';
 
-        preg_match_all('`\s*(?<param>((IN|OUT|INOUT|VARIADIC)?\s+)?([^\s,\)]+\s+)?(?<type>[^\s,\)]+)(\s+(?:default\s|=)\s*[^\s,\)]+)?)\s*(,|$)`mi', $params, $matchs);
-        $params = $matchs['param'];
-        $types  = $matchs['type'];
-
-        $paramsList = implode(', ', array_map('trim', $params));
-        $typesList  = implode(', ', array_map('trim', $types));
+        preg_match_all('`\s*(?<param>((?<direction>IN|OUT|INOUT|VARIADIC)?\s+)?([^\s,\)]+\s+)?(?<type>[^\s,\)]+)(\s+(?:default\s|=)\s*[^\s,\)]+)?)\s*(,|$)`mi', $params, $matchs);
+        $params     = $matchs['param'];
+        $directions = $matchs['direction'];
+        $types      = $matchs['type'];
 
         return [
-            'name'    => $name,
-            'params'  => $paramsList,
-            'types'   => $typesList,
-            'return'  => $return,
+            'name'       => $name,
+            'params'     => $params,
+            'directions' => $directions,
+            'types'      => $types,
+            'return'     => $return,
         ];
     }
 }
