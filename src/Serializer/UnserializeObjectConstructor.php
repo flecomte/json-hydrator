@@ -2,14 +2,15 @@
 
 namespace FLE\JsonHydrator\Serializer;
 
+use Doctrine\Instantiator\Instantiator;
 use FLE\JsonHydrator\Entity\EntityInterface;
 use FLE\JsonHydrator\Entity\IdEntityInterface;
 use FLE\JsonHydrator\Entity\UuidEntityInterface;
-use Doctrine\Instantiator\Instantiator;
 use JMS\Serializer\Construction\ObjectConstructorInterface;
 use JMS\Serializer\DeserializationContext;
 use JMS\Serializer\Metadata\ClassMetadata;
 use JMS\Serializer\Visitor\DeserializationVisitorInterface;
+use function current;
 use function in_array;
 
 class UnserializeObjectConstructor implements ObjectConstructorInterface
@@ -48,7 +49,7 @@ class UnserializeObjectConstructor implements ObjectConstructorInterface
         }
         $pk = $this->entityCollection->getPk($data, $type['name']);
         /* Check if entity is already exist*/
-        if (empty($pk) || null === $object = $this->entityCollection->get($metadata->name, $pk)) {
+        if (empty($pk) || current($pk) === null || null === $object = $this->entityCollection->get($metadata->name, $pk)) {
             /** @var EntityInterface $object */
             $object = $this->getInstantiator()->instantiate($metadata->name);
             /* Set the PK to the new Entity and put it into the EntityCollection */
@@ -80,11 +81,11 @@ class UnserializeObjectConstructor implements ObjectConstructorInterface
     {
         $pk = [];
         if ($entity instanceof UuidEntityInterface) {
-            $entity->setUuid($data['uuid']);
+            $entity->setUuid($data['uuid'] ?? null);
             $pk['uuid'] = $entity->getUuid();
         }
         if ($entity instanceof IdEntityInterface) {
-            $entity->setId($data['id']);
+            $entity->setId($data['id'] ?? null);
             $pk['id'] = $entity->getId();
         }
 

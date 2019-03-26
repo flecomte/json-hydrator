@@ -7,7 +7,7 @@ interface UuidEntityInterface extends EntityInterface, DuplicateInterface
     /**
      * @return string
      */
-    public function getUuid(): string;
+    public function getUuid(): ?string;
 
     /**
      * @param string $uuid

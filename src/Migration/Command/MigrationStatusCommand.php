@@ -2,6 +2,7 @@
 
 namespace FLE\JsonHydrator\Migration\Command;
 
+use FLE\JsonHydrator\Database\Connection;
 use FLE\JsonHydrator\Migration\Migration;
 use FLE\JsonHydrator\Migration\MigrationFunctions;
 use Symfony\Component\Console\Command\Command;
@@ -29,16 +30,23 @@ class MigrationStatusCommand extends Command
     private $migrationFunctions;
 
     /**
+     * @var Connection
+     */
+    private $connection;
+
+    /**
      * MigrationStatusCommand constructor.
      *
      * @param Migration          $migration
      * @param MigrationFunctions $migrationFunctions
+     * @param Connection         $connection
      */
-    public function __construct(Migration $migration, MigrationFunctions $migrationFunctions)
+    public function __construct(Migration $migration, MigrationFunctions $migrationFunctions, Connection $connection)
     {
         parent::__construct();
         $this->migration          = $migration;
         $this->migrationFunctions = $migrationFunctions;
+        $this->connection = $connection;
     }
 
     protected function configure()
@@ -102,8 +110,11 @@ class MigrationStatusCommand extends Command
         $output->writeln("<error>$error</error>");
 
         /* FUNCTIONS */
-
+        $this->connection->beginTransaction();
+        $this->migration->execute($migrations);
         $this->migrationFunctions->status($migrations, $error);
+        $this->connection->rollBack();
+
         $table = new Table($output);
         $table->setHeaderTitle('Status of Functions');
         $table->setHeaders(['Functions', 'Status', 'Validation', 'Version']);

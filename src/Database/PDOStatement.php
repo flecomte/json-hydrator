@@ -150,6 +150,29 @@ class PDOStatement extends \PDOStatement
     }
 
     /**
+     * @param EntityInterface[] $entities
+     * @param string[]        $group
+     *
+     * @return bool
+     */
+    public function bindEntities(array $entities, array $group = null)
+    {
+        foreach ($entities as $entity) {
+            $this->entityCollection->persist($entity);
+        }
+
+        preg_match('/[^\\\]+$/', get_class($entities[0]), $matches);
+        $shortName = $matches[0];
+
+        $sc = new SerializationContext();
+        $sc->setGroups($group === null ? $shortName : $group);
+
+        $json = $this->serializer->serialize($entities, 'json', $sc);
+
+        return $this->bindParam(':'.strtolower($shortName).'s', $json);
+    }
+
+    /**
      * @param string $fqn
      *
      * @return EntityInterface

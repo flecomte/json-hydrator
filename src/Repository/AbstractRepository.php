@@ -272,6 +272,20 @@ abstract class AbstractRepository implements RepositoryInterface
     }
 
     /**
+     * @param EntityInterface[] $entities
+     * @param string[]|null     $groups
+     *
+     * @return EntityInterface[]
+     */
+    protected function genericMultiUpsert(array $entities, array $groups = null): array
+    {
+        $stmt = $this->prepareRequest('multiUpsert');
+        $stmt->bindEntities($entities, $groups);
+
+        return $stmt->fetchEntities(get_class($entities[0]));
+    }
+
+    /**
      * @param EntityInterface $object
      *
      * @return EntityInterface

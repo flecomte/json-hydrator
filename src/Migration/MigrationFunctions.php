@@ -279,7 +279,6 @@ SQL;
     {
         $this->connection->beginTransaction();
         $this->createTable();
-        $executedFunctions = $this->getExecutedFunctions();
         $allMigrations     = $this->mergeMigrationsVersion();
         $list              = [];
         try {
@@ -376,7 +375,7 @@ SQL;
     {
         $definition = $this->getDefinitionShort($functionContent);
 
-        return "DROP FUNCTION $definition;";
+        return "DROP FUNCTION IF EXISTS $definition;";
     }
 
     /**

@@ -2,10 +2,10 @@
 
 namespace FLE\JsonHydrator\Serializer;
 
+use Exception;
 use FLE\JsonHydrator\Entity\EntityInterface;
 use FLE\JsonHydrator\Entity\IdEntityInterface;
 use FLE\JsonHydrator\Entity\UuidEntityInterface;
-use Exception;
 use LogicException;
 use Metadata\MetadataFactory;
 use Ramsey\Uuid\Uuid;
@@ -70,8 +70,6 @@ class EntityCollection
      * @param string                  $className
      *
      * @return string[]|int[]
-     *
-     * @throws LogicException
      */
     public function getPk($object, string $className = null): array
     {
@@ -97,7 +95,7 @@ class EntityCollection
             if ($reflexion->implementsInterface(UuidEntityInterface::class)) {
                 if (is_array($object)) {
                     if (!isset($object['uuid'])) {
-                        throw new LogicException('"UuidEntityInterface" must have an uuid');
+                        $pkey['uuid'] = null;
                     } else {
                         $pkey['uuid'] = $object['uuid'];
                     }
@@ -107,7 +105,7 @@ class EntityCollection
             } elseif ($reflexion->implementsInterface(IdEntityInterface::class)) {
                 if (is_array($object)) {
                     if (!isset($object['id'])) {
-                        throw new LogicException('"IdEntityInterface" must have an id');
+                        $pkey['id'] = null;
                     } else {
                         $pkey['id'] = $object['id'];
                     }
