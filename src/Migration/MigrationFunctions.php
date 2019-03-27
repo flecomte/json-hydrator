@@ -73,12 +73,12 @@ class MigrationFunctions extends MigrationAbstract
             mkdir($this->requestDirectory.'/'.$entity, 0755, true);
         }
 
-        $table = self::camelToSnack($entity);
-        $filename = $entity.'/'.$request;
-        $functionName  = strtolower(str_replace('/', '_', $entity.'/'.self::camelToSnack($request)));
+        $table        = self::camelToSnack($entity);
+        $filename     = $entity.'/'.$request;
+        $functionName = strtolower(str_replace('/', '_', $entity.'/'.self::camelToSnack($request)));
 
-        $functionFilename   = "$this->functionsDirectory/$filename.sql";
-        $requestFilename   = "$this->requestDirectory/$filename.sql";
+        $functionFilename = "$this->functionsDirectory/$filename.sql";
+        $requestFilename  = "$this->requestDirectory/$filename.sql";
 
         $sql = <<<SQL
 CREATE OR REPLACE FUNCTION $functionName (_uuid uuid) RETURNS json
@@ -106,7 +106,6 @@ SQL;
         $requestSQL = <<<SQL
 SELECT * FROM $functionName(:uuid)
 SQL;
-
 
         file_put_contents($requestFilename, $requestSQL);
 
@@ -184,7 +183,7 @@ SQL;
             /* If function already exist in DB */
             if ($alreadyExist) {
                 $oldFunctionContent = $executedFunctions[$filename]['up'];
-                $oldDefinition      = $this->getDefinition($oldFunctionContent);;
+                $oldDefinition      = $this->getDefinition($oldFunctionContent);
 
                 /* Execute ONLY if function has changed (definition and content) */
                 if ($oldFunctionContent === $newFunctionContent) {

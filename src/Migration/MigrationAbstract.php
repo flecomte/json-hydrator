@@ -46,8 +46,8 @@ abstract class MigrationAbstract
             $requestMigrationDirectory = __DIR__.'/sql/request';
         }
         $this->requestMigrationDirectory   = $requestMigrationDirectory;
-        $this->connection         = $connection;
-        $this->logger             = $logger;
+        $this->connection                  = $connection;
+        $this->logger                      = $logger;
     }
 
     /**

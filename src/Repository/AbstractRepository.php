@@ -142,27 +142,27 @@ abstract class AbstractRepository implements RepositoryInterface
     }
 
     /**
-     * @param string $fqn
+     * @param string   $fqn
      * @param int|null $limit
      * @param int|null $page
-     * @param array $extraParams
+     * @param array    $extraParams
      *
      * @return Pagerfanta
      */
     protected function genericFindAllPaginated(string $fqn, int $limit = null, int $page = null, array $extraParams = []): Pagerfanta
     {
-        $count = 0;
+        $count    = 0;
         $entities = $this->genericFindAll($fqn, $limit, self::calculatePagination($limit, $page), $count, $extraParams);
 
         return self::paginate($entities, $count, $limit, $page);
     }
 
     /**
-     * @param string $fqn
-     * @param int $limit
+     * @param string   $fqn
+     * @param int      $limit
      * @param int|null $offset
      * @param int|null $count
-     * @param array $extraParams
+     * @param array    $extraParams
      *
      * @return UuidEntityInterface[]
      */

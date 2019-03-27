@@ -151,7 +151,7 @@ class PDOStatement extends \PDOStatement
 
     /**
      * @param EntityInterface[] $entities
-     * @param string[]        $group
+     * @param string[]          $group
      *
      * @return bool
      */

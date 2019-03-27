@@ -212,7 +212,7 @@ class Migration extends MigrationAbstract
          * (If the file does not exist but is present in DB)
          */
         $toDownMigrations = [];
-        $firstVersion = current($this->getExecutedMigration())['version'];
+        $firstVersion     = current($this->getExecutedMigration())['version'];
         foreach ($this->getExecutedMigration() as $upFilename => $migration) {
             /* If version is defined, force down */
             if ($version !== null && $migration['version'] >= $version && $migration['version'] > $firstVersion) {

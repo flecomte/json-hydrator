@@ -46,7 +46,7 @@ class MigrationStatusCommand extends Command
         parent::__construct();
         $this->migration          = $migration;
         $this->migrationFunctions = $migrationFunctions;
-        $this->connection = $connection;
+        $this->connection         = $connection;
     }
 
     protected function configure()
@@ -66,7 +66,7 @@ class MigrationStatusCommand extends Command
             if ($infos['executed']) {
                 $status = '<info>executed</info>';
             } else {
-                $status = '<error>not executed</error>';
+                $status     = '<error>not executed</error>';
                 $isUpToDate = false;
             }
 
