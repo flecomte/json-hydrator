@@ -20,7 +20,6 @@ use function microtime;
 use function preg_match;
 use function round;
 use function strlen;
-use function substr;
 
 class PDOStatement extends \PDOStatement
 {
@@ -228,11 +227,8 @@ class PDOStatement extends \PDOStatement
 
             return [];
         }
-        if (substr($json, 0, 1) !== '[') {
-            throw new NotAcceptableException('The json must be an array');
-        }
 
-        return $this->serializer->deserialize($json, "array<$fqn>", 'json');
+        return $this->serializer->deserialize($json, "array<string, $fqn>", 'json');
     }
 
     public function setName($name)
