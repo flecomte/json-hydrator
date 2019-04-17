@@ -2,7 +2,6 @@
 
 namespace FLE\JsonHydrator\Serializer;
 
-use Exception;
 use FLE\JsonHydrator\Entity\EntityInterface;
 use FLE\JsonHydrator\Entity\IdEntityInterface;
 use FLE\JsonHydrator\Entity\UuidEntityInterface;
@@ -48,6 +47,7 @@ class EntityCollection
      * @param string[]        $pkey
      *
      * @return string|null
+     * @throws PersistException
      */
     public function set(EntityInterface $object, array $pkey): ?string
     {
@@ -58,6 +58,31 @@ class EntityCollection
                 throw new PersistException($key, $object);
             }
             $this->collection[$key] = $object;
+
+            return $key;
+        }
+
+        return null;
+    }
+
+    /**
+     * @param EntityInterface $object
+     * @param string[]        $pkey
+     *
+     * @return string|null
+     *
+     * @throw DetachException
+     */
+    public function remove(EntityInterface $object, array $pkey): ?string
+    {
+        if (!empty($pkey)) {
+            $class = get_class($object);
+            $key   = $this->getKey($class, $pkey);
+            if (isset($this->collection[$key]) && $this->collection[$key] == $object) {
+                unset($this->collection[$key]);
+            } else {
+                throw new DetachException($key, $object);
+            }
 
             return $key;
         }
@@ -143,7 +168,7 @@ class EntityCollection
      *
      * @return string|int|null
      *
-     * @throws Exception
+     * @throws PersistException
      */
     public function persist(EntityInterface $object)
     {
@@ -163,6 +188,32 @@ class EntityCollection
             }
             if ($object instanceof IdEntityInterface && $object->getId() !== null) {
                 $this->set($object, $pkey);
+
+                return current($pkey);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param EntityInterface $object
+     *
+     * @return string|int|null
+     *
+     * @throw DetachException
+     */
+    public function detach(EntityInterface $object)
+    {
+        $pkey = $this->getPk($object);
+        if ($this->has(get_class($object), $pkey)) {
+            if ($object instanceof UuidEntityInterface) {
+                $this->remove($object, $pkey);
+
+                return current($pkey);
+            }
+            if ($object instanceof IdEntityInterface && $object->getId() !== null) {
+                $this->remove($object, $pkey);
 
                 return current($pkey);
             }

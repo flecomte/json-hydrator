@@ -2,8 +2,8 @@
 
 namespace FLE\JsonHydrator\Serializer\EventSubscriber;
 
-use FLE\JsonHydrator\Serializer\EntityCollection;
 use Exception;
+use FLE\JsonHydrator\Serializer\EntityCollection;
 use JMS\Serializer\EventDispatcher\EventSubscriberInterface;
 use JMS\Serializer\EventDispatcher\ObjectEvent;
 
@@ -44,6 +44,8 @@ class SaveEventSubscriber implements EventSubscriberInterface
      */
     public function onPostDeserialize(ObjectEvent $event)
     {
-        $this->entityCollection->persist($event->getObject());
+        if (!$event->getContext()->hasAttribute('persist') || $event->getContext()->getAttribute('persist') !== false) {
+            $this->entityCollection->persist($event->getObject());
+        }
     }
 }

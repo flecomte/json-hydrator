@@ -35,7 +35,7 @@ class UnserializeObjectConstructor implements ObjectConstructorInterface
      *
      * @param DeserializationVisitorInterface $visitor
      * @param ClassMetadata                   $metadata
-     * @param mixed                           $data
+     * @param object|array|string|int|bool    $data
      * @param array                           $type
      * @param DeserializationContext          $context
      *
@@ -43,8 +43,10 @@ class UnserializeObjectConstructor implements ObjectConstructorInterface
      */
     public function construct(DeserializationVisitorInterface $visitor, ClassMetadata $metadata, $data, array $type, DeserializationContext $context): ?object
     {
+        $persist = !$context->hasAttribute('persist') || $context->getAttribute('persist') !== false;
+
         /* If empty or set ad clone use Doctrine\Instantiator */
-        if ($data === null || in_array('clone', $type['params'])) {
+        if ($data === null || in_array('clone', $type['params']) || $persist === false) {
             return $this->getInstantiator()->instantiate($metadata->name);
         }
         $pk = $this->entityCollection->getPk($data, $type['name']);

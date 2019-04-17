@@ -363,4 +363,9 @@ abstract class AbstractRepository implements RepositoryInterface
     {
         return $this->entityCollection->persist($object);
     }
+
+    public function detach(EntityInterface $object)
+    {
+        return $this->entityCollection->detach($object);
+    }
 }
