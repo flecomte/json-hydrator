@@ -54,7 +54,7 @@ class MigrationStatusCommand extends Command
         $this->setDescription('List all migration left');
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $isUpToDate = true;
         $this->migration->status($migrations, $error);

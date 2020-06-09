@@ -5,77 +5,31 @@ namespace FLE\JsonHydrator\Repository;
 use FLE\JsonHydrator\Database\Connection;
 use FLE\JsonHydrator\Database\PDOStatement;
 use FLE\JsonHydrator\Entity\EntityInterface;
-use FLE\JsonHydrator\Entity\IdEntityInterface;
-use FLE\JsonHydrator\Entity\UuidEntityInterface;
 use FLE\JsonHydrator\Serializer\EntityCollection;
 use FLE\JsonHydrator\Serializer\SerializerInterface;
 use LogicException;
 use Pagerfanta\Adapter\FixedAdapter;
 use Pagerfanta\Pagerfanta;
-use function class_implements;
 use function file_exists;
 use function get_class;
-use function in_array;
 use function is_iterable;
 use function preg_match;
 use function ucfirst;
 
 abstract class AbstractRepository implements RepositoryInterface
 {
+    protected Connection $connection;
+    protected SerializerInterface $serializer;
     /**
-     * @var Connection
+     * Short name class
      */
-    protected $connection;
+    protected string $entityName;
+    protected EntityCollection $entityCollection;
+    protected bool $cache = false;
+    protected string $shortName;
+    private string $requestDirectory;
 
     /**
-     * @var SerializerInterface
-     */
-    protected $serializer;
-
-    /**
-     * @var string
-     *             Short name class
-     */
-    protected $entityName;
-
-    /**
-     * @var EntityCollection
-     */
-    protected $entityCollection;
-
-    /**
-     * @var bool
-     */
-    protected $cache = false;
-
-    /**
-     * @var string
-     */
-    protected $shortName;
-
-    /**
-     * @var string
-     */
-    private $requestDirectory;
-
-    /**
-     * @param string|int $pkValue
-     *
-     * @return EntityInterface
-     */
-    public function reference($pkValue): EntityInterface
-    {
-        $pkey   = $this->entityCollection->getPk($pkValue, $this->entityName);
-        $entity = $this->entityCollection->getReference($this->entityName, $pkey);
-
-        return $entity;
-    }
-
-    /**
-     * @param EntityInterface $entity
-     *
-     * @return EntityInterface
-     *
      * @throws NotFoundException
      * @throws LogicException
      */
@@ -83,22 +37,10 @@ abstract class AbstractRepository implements RepositoryInterface
     {
         $repoNoCache = $this->disableCache();
 
-        if ($entity instanceof IdEntityInterface) {
-            return $repoNoCache->genericFindBy($entity->getId(), get_class($entity));
-        } elseif ($entity instanceof UuidEntityInterface) {
-            return $repoNoCache->genericFindBy($entity->getUuid(), get_class($entity));
-        }
-
-        throw new LogicException('You must pass "IdEntityInterface" or "UuidEntityInterface"');
+        return $repoNoCache->genericFindBy($entity->getId(), get_class($entity));
     }
 
-    /**
-     * @param int $limit
-     * @param int $page
-     *
-     * @return float|int Offset
-     */
-    protected static function calculatePagination(int $limit = null, int $page = null)
+    protected static function calculatePagination(int $limit = null, int $page = null): int
     {
         if ($limit === null || $limit <= 0) {
             $limit = 10;
@@ -110,7 +52,7 @@ abstract class AbstractRepository implements RepositoryInterface
         return ($limit * $page) - $limit;
     }
 
-    protected static function paginate(array $elements, int $count, int $limit = null, int $page = null)
+    protected static function paginate(array $elements, int $count, int $limit = null, int $page = null): Pagerfanta
     {
         $adapter = new FixedAdapter($count, $elements);
         $pager   = new Pagerfanta($adapter);
@@ -121,15 +63,6 @@ abstract class AbstractRepository implements RepositoryInterface
         return $pager;
     }
 
-    /**
-     * AbstractRepository constructor.
-     *
-     * @param Connection          $connection
-     * @param SerializerInterface $serializer
-     * @param string              $entityName
-     * @param EntityCollection    $entityCollection
-     * @param string              $requestDirectory
-     */
     public function __construct(Connection $connection, SerializerInterface $serializer, string $entityName, EntityCollection $entityCollection, string $requestDirectory)
     {
         preg_match('/[^\\\]+$/', $entityName, $matches);
@@ -141,15 +74,7 @@ abstract class AbstractRepository implements RepositoryInterface
         $this->requestDirectory = $requestDirectory;
     }
 
-    /**
-     * @param string   $fqn
-     * @param int|null $limit
-     * @param int|null $page
-     * @param array    $extraParams
-     *
-     * @return Pagerfanta
-     */
-    protected function genericFindAllPaginated(string $fqn, int $limit = null, int $page = null, array $extraParams = []): Pagerfanta
+    protected function genericFindAllPaginated(string $fqn, ?int $limit = null, ?int $page = null, array $extraParams = []): Pagerfanta
     {
         $count    = 0;
         $entities = $this->genericFindAll($fqn, $limit, self::calculatePagination($limit, $page), $count, $extraParams);
@@ -158,15 +83,9 @@ abstract class AbstractRepository implements RepositoryInterface
     }
 
     /**
-     * @param string   $fqn
-     * @param int      $limit
-     * @param int|null $offset
-     * @param int|null $count
-     * @param array    $extraParams
-     *
-     * @return UuidEntityInterface[]
+     * @return EntityInterface[]
      */
-    protected function genericFindAll(string $fqn, int $limit = null, int $offset = null, int &$count = null, array $extraParams = []): array
+    protected function genericFindAll(string $fqn, int $limit = null, ?int $offset = null, ?int &$count = null, array $extraParams = []): array
     {
         $limit  = $limit ?? 200;
         $offset = $offset ?? 0;
@@ -183,8 +102,6 @@ abstract class AbstractRepository implements RepositoryInterface
     }
 
     /**
-     * @param string $requestName
-     *
      * @return false|string
      *
      * @throws LogicException
@@ -200,8 +117,6 @@ abstract class AbstractRepository implements RepositoryInterface
     }
 
     /**
-     * @param string $requestName
-     *
      * @return PDOStatement|bool|void
      */
     protected function prepareRequest(string $requestName)
@@ -215,19 +130,13 @@ abstract class AbstractRepository implements RepositoryInterface
     }
 
     /**
-     * @param mixed  $value
-     * @param string $fqn
-     * @param string $field
-     *
-     * @return EntityInterface
+     * @param mixed $value
      *
      * @throws NotFoundException
      */
-    protected function genericFindBy($value, string $fqn, $field = null): EntityInterface
+    protected function genericFindBy($value, string $fqn, ?string $field = null): EntityInterface
     {
-        if ($field === null && in_array(UuidEntityInterface::class, class_implements($fqn))) {
-            $field = 'uuid';
-        } elseif ($field === null && in_array(IdEntityInterface::class, class_implements($fqn))) {
+        if ($field === null) {
             $field = 'id';
         }
 
@@ -243,13 +152,10 @@ abstract class AbstractRepository implements RepositoryInterface
 
     /**
      * @param mixed  $value
-     * @param string $field
-     *
-     * @return array
      *
      * @throws NotFoundException
      */
-    protected function genericFindByAsArray($value, $field): array
+    protected function genericFindByAsArray($value, string $field): array
     {
         $stmt = $this->prepareRequest('findBy'.ucfirst($field));
         $stmt->bindParam($field, $value);
@@ -258,10 +164,9 @@ abstract class AbstractRepository implements RepositoryInterface
     }
 
     /**
-     * @param EntityInterface $entity
      * @param string[]|null   $groups
      *
-     * @return EntityInterface
+     * @throws NotFoundException
      */
     protected function genericUpsert(EntityInterface $entity, array $groups = null): EntityInterface
     {
@@ -286,21 +191,13 @@ abstract class AbstractRepository implements RepositoryInterface
     }
 
     /**
-     * @param EntityInterface $object
-     *
-     * @return EntityInterface
-     *
      * @throws NotFoundException
      */
     protected function genericDelete(EntityInterface $object): EntityInterface
     {
         $stmt = $this->prepareRequest('delete');
 
-        if ($object instanceof IdEntityInterface) {
-            $stmt->bindValue(':id', $object->getId());
-        } elseif ($object instanceof UuidEntityInterface) {
-            $stmt->bindValue(':uuid', $object->getUuid());
-        }
+        $stmt->bindValue(':id', $object->getId());
 
         return $stmt->fetchEntity(get_class($object));
     }

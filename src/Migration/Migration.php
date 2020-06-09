@@ -35,15 +35,8 @@ use const SORT_STRING;
 
 class Migration extends MigrationAbstract
 {
-    /**
-     * @var string
-     */
-    protected $migrationDirectory;
-
-    /**
-     * @var string
-     */
-    protected $dateFormat;
+    protected string $migrationDirectory;
+    protected string $dateFormat;
 
     /**
      * Migration constructor.
@@ -63,10 +56,6 @@ class Migration extends MigrationAbstract
 
     /**
      * Generate the blank file with the right name.
-     *
-     * @param null $name
-     *
-     * @return array
      */
     public function generateFile(string $name = null): array
     {

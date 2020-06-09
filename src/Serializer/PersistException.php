@@ -9,7 +9,7 @@ use function get_class;
 
 class PersistException extends LogicException
 {
-    protected $object;
+    protected EntityInterface $object;
 
     public function __construct(string $key, EntityInterface $object, Throwable $previous = null)
     {

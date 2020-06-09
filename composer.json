@@ -11,7 +11,7 @@
         }
     ],
     "require": {
-        "php": "^7.3",
+        "php": "^7.4",
         "ext-ctype": "*",
         "ext-json": "*",
         "ext-pdo": "*",
@@ -20,6 +20,7 @@
         "ramsey/uuid": "^4",
         "symfony/console": "^5",
         "symfony/form": "^5",
+        "symfony/security-core": "^v5",
         "pagerfanta/pagerfanta": "^2"
     },
     "require-dev": {

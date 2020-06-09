@@ -6,44 +6,26 @@ use Ramsey\Uuid\Uuid;
 
 trait UuidEntity
 {
-    /**
-     * @var string
-     */
-    protected $uuid;
+    protected string $id;
 
     public function __construct()
     {
-        $this->setUuid();
+        $this->id = (string) Uuid::uuid4();
     }
 
     /**
-     * @return string
+     * @param string $id
      */
-    public function getUuid(): ?string
+    public static function getReference($id): EntityInterface
     {
-        return $this->uuid;
+        $n = new self();
+        $n->id = $id;
+
+        return $n;
     }
 
-    /**
-     * @param string $uuid
-     *
-     * @return UuidEntity
-     */
-    public function setUuid(string $uuid = null)
+    public function getId(): ?string
     {
-        $this->uuid = $uuid ?? (string) Uuid::uuid4();
-
-        return $this;
-    }
-
-    /**
-     * @return UuidEntity
-     */
-    public function duplicate()
-    {
-        $copy = clone $this;
-        $copy->setUuid();
-
-        return $copy;
+        return $this->id;
     }
 }

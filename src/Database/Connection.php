@@ -12,19 +12,6 @@ class Connection extends PDO
 {
     use NestedTransactionPDO;
 
-    /**
-     * Connection constructor.
-     *
-     * @param string           $dbName
-     * @param string           $host
-     * @param string           $port
-     * @param string           $dbUser
-     * @param string           $dbPwd
-     * @param Stopwatch|null   $stopwatch
-     * @param Serializer       $serializer
-     * @param EntityCollection $entityCollection
-     * @param LoggerInterface  $logger
-     */
     public function __construct(string $dbName, string $host, string $port, string $dbUser, string $dbPwd, ?Stopwatch $stopwatch, Serializer $serializer, EntityCollection $entityCollection, ?LoggerInterface $logger)
     {
         parent::__construct("pgsql:dbname=$dbName;host=$host;port=$port;", $dbUser, $dbPwd);
@@ -36,7 +23,7 @@ class Connection extends PDO
      * @param string $statement
      * @param array  $options
      *
-     * @return bool|PDOStatement|void
+     * @return bool|PDOStatement
      */
     public function prepare($statement, $options = [])
     {

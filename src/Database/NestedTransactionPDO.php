@@ -14,12 +14,12 @@ trait NestedTransactionPDO
     /**
      * @var array database drivers that support SAVEPOINT * statements
      */
-    protected static $_supportedDrivers = ['pgsql', 'mysql'];
+    protected static array $_supportedDrivers = ['pgsql', 'mysql'];
 
     /**
      * @var int the current transaction depth
      */
-    protected $transactionDepth = 0;
+    protected int $transactionDepth = 0;
 
     abstract public function getAttribute($attribute);
 

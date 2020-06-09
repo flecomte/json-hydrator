@@ -8,25 +8,10 @@ use function file_get_contents;
 
 abstract class MigrationAbstract
 {
-    /**
-     * @var int
-     */
-    protected static $version;
-
-    /**
-     * @var string
-     */
-    protected $requestMigrationDirectory;
-
-    /**
-     * @var Connection
-     */
-    protected $connection;
-
-    /**
-     * @var LoggerInterface
-     */
-    protected $logger;
+    protected static int $version;
+    protected ?string $requestMigrationDirectory;
+    protected Connection $connection;
+    protected LoggerInterface $logger;
 
     public static function camelToSnack($input)
     {

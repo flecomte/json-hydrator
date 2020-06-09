@@ -2,17 +2,12 @@
 
 namespace FLE\JsonHydrator\Entity;
 
-interface UuidEntityInterface extends EntityInterface, DuplicateInterface
+interface UuidEntityInterface extends EntityInterface
 {
-    /**
-     * @return string
-     */
-    public function getUuid(): ?string;
+    public function getId(): ?string;
 
     /**
-     * @param string $uuid
-     *
-     * @return UuidEntityInterface
+     * @param string $id
      */
-    public function setUuid(string $uuid = null);
+    static function getReference($id): self;
 }

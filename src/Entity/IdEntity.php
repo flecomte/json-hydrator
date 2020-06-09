@@ -4,39 +4,21 @@ namespace FLE\JsonHydrator\Entity;
 
 trait IdEntity
 {
-    /**
-     * @var int
-     */
-    protected $id;
-
-    /**
-     * @return int
-     */
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
+    protected int $id;
 
     /**
      * @param int $id
-     *
-     * @return IdEntity
      */
-    public function setId(int $id)
+    public static function getReference($id): self
     {
-        $this->id = $id;
+        $n = new self();
+        $n->id = $id;
 
-        return $this;
+        return $n;
     }
 
-    /**
-     * @return IdEntity
-     */
-    public function duplicate()
+    public function getId(): ?int
     {
-        $copy     = clone $this;
-        $copy->id = null;
-
-        return $copy;
+        return $this->id;
     }
 }

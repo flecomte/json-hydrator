@@ -7,11 +7,11 @@ use FLE\JsonHydrator\Entity\UuidEntityInterface;
 interface UuidRepository
 {
     /**
-     * @param string $uuid
+     * @param string $id
      *
      * @return UuidEntityInterface
      *
      * @throws NotFoundException
      */
-    public function findByUuid(string $uuid);
+    public function findById(string $id);
 }

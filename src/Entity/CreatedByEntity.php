@@ -6,15 +6,9 @@ use Symfony\Component\Security\Core\User\UserInterface;
 
 trait CreatedByEntity
 {
-    /**
-     * @var UserInterface
-     */
-    protected $createdBy;
+    protected UserInterface $createdBy;
 
-    /**
-     * @return UserInterface
-     */
-    public function getCreatedBy(): ?UserInterface
+    public function getCreatedBy(): UserInterface
     {
         return $this->createdBy;
     }

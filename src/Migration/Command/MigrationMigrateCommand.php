@@ -54,7 +54,7 @@ class MigrationMigrateCommand extends Command
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Not prompt before migrate');
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $commandStatus = $this->getApplication()->find('migration:status');
         $arguments     = [
@@ -138,5 +138,7 @@ class MigrationMigrateCommand extends Command
 
             return 1;
         }
+
+        return 0;
     }
 }

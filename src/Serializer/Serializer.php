@@ -19,20 +19,9 @@ use function round;
 
 class Serializer implements SerializerInterface, ArrayTransformerInterface
 {
-    /**
-     * @var SerializerInterface
-     */
-    protected $jmsSerializer;
-
-    /**
-     * @var Stopwatch|null
-     */
-    private $stopwatch;
-
-    /**
-     * @var LoggerInterface
-     */
-    private $logger;
+    protected JmsSerializer $jmsSerializer;
+    private ?Stopwatch $stopwatch;
+    private ?LoggerInterface $logger;
 
     /**
      * Serializer constructor.

@@ -9,33 +9,11 @@ use function class_exists;
 
 class RepositoryFactory
 {
-    /**
-     * @var Connection
-     */
-    protected $connection;
-    /**
-     * @var SerializerInterface
-     */
-    protected $serializer;
+    protected Connection $connection;
+    protected SerializerInterface $serializer;
+    private EntityCollection $entityCollection;
+    private string $requestDirectory;
 
-    /**
-     * @var EntityCollection
-     */
-    private $entityCollection;
-
-    /**
-     * @var string
-     */
-    private $requestDirectory;
-
-    /**
-     * RepositoryFactory constructor.
-     *
-     * @param Connection          $connection
-     * @param SerializerInterface $serializer
-     * @param EntityCollection    $entityCollection
-     * @param string              $requestDirectory
-     */
     public function __construct(Connection $connection, SerializerInterface $serializer, EntityCollection $entityCollection, string $requestDirectory)
     {
         $this->connection       = $connection;
@@ -44,11 +22,6 @@ class RepositoryFactory
         $this->requestDirectory = $requestDirectory;
     }
 
-    /**
-     * @param string $fqn
-     *
-     * @return RepositoryInterface
-     */
     public function getRepository(string $fqn): RepositoryInterface
     {
         $var = (preg_replace('/\\\\Entity\\\\/', '\\Repository\\', $fqn).'Repository');

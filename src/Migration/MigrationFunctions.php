@@ -29,15 +29,8 @@ use const SORT_STRING;
 
 class MigrationFunctions extends MigrationAbstract
 {
-    /**
-     * @var string
-     */
-    protected $functionsDirectory;
-
-    /**
-     * @var string|null
-     */
-    private $requestDirectory;
+    protected string $functionsDirectory;
+    private ?string $requestDirectory;
 
     /**
      * Migration constructor.
@@ -81,31 +74,30 @@ class MigrationFunctions extends MigrationAbstract
         $requestFilename  = "$this->requestDirectory/$filename.sql";
 
         $sql = <<<SQL
-CREATE OR REPLACE FUNCTION $functionName (_uuid uuid) RETURNS json
-  LANGUAGE plpgsql
-  PARALLEL SAFE
-AS $$
-DECLARE
-  result json;
-BEGIN
-  SELECT to_json(t) INTO result
-    FROM
-    (
-      SELECT
-        *
-      FROM $table
-      WHERE uuid = _uuid
-    ) t;
-
-    RETURN result;
-END;
-$$;
-SQL;
+            CREATE OR REPLACE FUNCTION $functionName (_uuid uuid) RETURNS json
+              LANGUAGE plpgsql
+              PARALLEL SAFE
+            AS $$
+            DECLARE
+              result json;
+            BEGIN
+              SELECT to_json(t) INTO result
+                FROM
+                (
+                  SELECT
+                    *
+                  FROM $table
+                  WHERE uuid = _uuid
+                ) t;
+                RETURN result;
+            END;
+            $$;
+            SQL;
         file_put_contents($functionFilename, $sql);
 
         $requestSQL = <<<SQL
-SELECT * FROM $functionName(:uuid)
-SQL;
+            SELECT * FROM $functionName(:uuid)
+            SQL;
 
         file_put_contents($requestFilename, $requestSQL);
 
@@ -150,9 +142,6 @@ SQL;
     }
 
     /**
-     * @param array|null  $list
-     * @param string|null $error
-     *
      * @throws BrokenMigrationException
      */
     protected function functionsUp(?array &$list = [], ?string &$error = null): void
@@ -233,9 +222,6 @@ SQL;
     }
 
     /**
-     * @param array|null  $list
-     * @param string|null $error
-     *
      * @throws BrokenMigrationException
      */
     protected function functionsDown(?array &$list = [], ?string &$error = null): void
@@ -329,8 +315,6 @@ SQL;
 
     /**
      * Create Table if not exist.
-     *
-     * @return int
      */
     protected function createTable(): int
     {
@@ -380,8 +364,6 @@ SQL;
     /**
      * Return All migrations, files and executed
      * value is the version.
-     *
-     * @return array
      */
     protected function mergeMigrationsVersion(): array
     {
@@ -400,8 +382,6 @@ SQL;
 
     /**
      * Return All migrations, files and executed.
-     *
-     * @return array
      */
     protected function mergeMigrations(): array
     {

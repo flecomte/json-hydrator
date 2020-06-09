@@ -12,10 +12,7 @@ use JMS\Serializer\EventDispatcher\ObjectEvent;
  */
 class SaveEventSubscriber implements EventSubscriberInterface
 {
-    /**
-     * @var EntityCollection
-     */
-    private $entityCollection;
+    private EntityCollection $entityCollection;
 
     public function __construct(EntityCollection $entityCollection)
     {
@@ -24,10 +21,8 @@ class SaveEventSubscriber implements EventSubscriberInterface
 
     /**
      * Returns the events to which this class has subscribed.
-     *
-     * @return array
      */
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             [
@@ -38,8 +33,6 @@ class SaveEventSubscriber implements EventSubscriberInterface
     }
 
     /**
-     * @param ObjectEvent $event
-     *
      * @throws Exception
      */
     public function onPostDeserialize(ObjectEvent $event)

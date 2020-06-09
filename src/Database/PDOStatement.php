@@ -11,6 +11,7 @@ use JMS\Serializer\SerializationContext;
 use PDO;
 use PDOException;
 use Psr\Log\LoggerInterface;
+use ReflectionException;
 use Symfony\Component\Stopwatch\Stopwatch;
 use function get_class;
 use function implode;
@@ -23,45 +24,14 @@ use function strlen;
 
 class PDOStatement extends \PDOStatement
 {
-    /**
-     * @var Stopwatch
-     */
-    private $stopwatch;
-
-    /**
-     * @var Serializer
-     */
-    private $serializer;
-
-    /**
-     * @var EntityCollection
-     */
-    private $entityCollection;
-
-    /**
-     * @var array
-     */
-    private $params;
-
-    /**
-     * @var bool
-     */
-    private $isExecuted = false;
-
-    /**
-     * @var LoggerInterface
-     */
-    private $logger;
-
-    /**
-     * @var float
-     */
-    private $duration;
-
-    /**
-     * @var string
-     */
-    private $name;
+    private ?Stopwatch $stopwatch;
+    private Serializer $serializer;
+    private EntityCollection $entityCollection;
+    private array $params;
+    private bool $isExecuted = false;
+    private ?LoggerInterface $logger;
+    private float $duration;
+    private string $name;
 
     protected function __construct(?Stopwatch $stopwatch, Serializer $serializer, EntityCollection $entityCollection, ?LoggerInterface $logger)
     {
@@ -78,7 +48,7 @@ class PDOStatement extends \PDOStatement
      */
     public function execute($inputParameters = null)
     {
-        if ($this->isExecuted == true) {
+        if ($this->isExecuted === true) {
             return false;
         }
         $this->isExecuted = true;
@@ -129,9 +99,10 @@ class PDOStatement extends \PDOStatement
 
     /**
      * @param EntityInterface $entity
-     * @param string[]        $group
+     * @param string[] $group
      *
      * @return bool
+     * @throws ReflectionException
      */
     public function bindEntity(EntityInterface $entity, array $group = null)
     {
@@ -150,9 +121,10 @@ class PDOStatement extends \PDOStatement
 
     /**
      * @param EntityInterface[] $entities
-     * @param string[]          $group
+     * @param string[] $group
      *
      * @return bool
+     * @throws ReflectionException
      */
     public function bindEntities(array $entities, array $group = null)
     {
@@ -192,8 +164,6 @@ class PDOStatement extends \PDOStatement
 
     /**
      * @return array
-     *
-     * @throws NotFoundException
      */
     public function fetchAsArray()
     {

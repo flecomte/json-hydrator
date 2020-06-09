@@ -2,6 +2,7 @@
 
 namespace FLE\JsonHydrator\Serializer;
 
+use Doctrine\Instantiator\Exception\ExceptionInterface;
 use Doctrine\Instantiator\Instantiator;
 use FLE\JsonHydrator\Entity\EntityInterface;
 use FLE\JsonHydrator\Entity\IdEntityInterface;
@@ -10,6 +11,7 @@ use JMS\Serializer\Construction\ObjectConstructorInterface;
 use JMS\Serializer\DeserializationContext;
 use JMS\Serializer\Metadata\ClassMetadata;
 use JMS\Serializer\Visitor\DeserializationVisitorInterface;
+use ReflectionException;
 use function current;
 use function in_array;
 
@@ -33,13 +35,10 @@ class UnserializeObjectConstructor implements ObjectConstructorInterface
     /**
      * Instantiate the Entity and put it into the EntityCollection.
      *
-     * @param DeserializationVisitorInterface $visitor
-     * @param ClassMetadata                   $metadata
-     * @param object|array|string|int|bool    $data
-     * @param array                           $type
-     * @param DeserializationContext          $context
+     * @param object|array|string|int|bool $data
      *
      * @return object|EntityInterface|null
+     * @throws ExceptionInterface|ReflectionException
      */
     public function construct(DeserializationVisitorInterface $visitor, ClassMetadata $metadata, $data, array $type, DeserializationContext $context): ?object
     {
@@ -82,10 +81,6 @@ class UnserializeObjectConstructor implements ObjectConstructorInterface
     public static function setPk(EntityInterface $entity, array $data): array
     {
         $pk = [];
-        if ($entity instanceof UuidEntityInterface) {
-            $entity->setUuid($data['uuid'] ?? null);
-            $pk['uuid'] = $entity->getUuid();
-        }
         if ($entity instanceof IdEntityInterface) {
             $entity->setId($data['id'] ?? null);
             $pk['id'] = $entity->getId();

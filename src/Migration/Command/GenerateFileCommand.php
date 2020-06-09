@@ -35,7 +35,7 @@ class GenerateFileCommand extends Command
             ->addArgument('name', InputArgument::OPTIONAL, 'Add name to the generated files');
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $table = new Table($output);
         $table->setHeaderTitle('Generated files');
@@ -44,5 +44,7 @@ class GenerateFileCommand extends Command
             $table->addRow([$filename]);
         }
         $table->render();
+
+        return 0;
     }
 }

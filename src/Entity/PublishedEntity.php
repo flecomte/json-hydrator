@@ -4,25 +4,14 @@ namespace FLE\JsonHydrator\Entity;
 
 trait PublishedEntity
 {
-    /**
-     * @var bool
-     */
-    protected $published;
+    protected bool $published;
 
-    /**
-     * @return bool
-     */
     public function isPublished(): bool
     {
         return $this->published;
     }
 
-    /**
-     * @param bool $published
-     *
-     * @return PublishedEntity
-     */
-    public function setPublished(bool $published)
+    public function setPublished(bool $published): PublishedEntity
     {
         $this->published = $published;
 

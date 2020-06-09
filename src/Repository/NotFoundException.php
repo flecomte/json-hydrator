@@ -7,7 +7,7 @@ use Throwable;
 
 class NotFoundException extends Exception
 {
-    private $uuid;
+    private string $uuid;
 
     public function __construct(string $uuid, Throwable $previous = null)
     {
@@ -15,7 +15,7 @@ class NotFoundException extends Exception
         $this->uuid = $uuid;
     }
 
-    public function getUuid()
+    public function getUuid(): string
     {
         return $this->uuid;
     }

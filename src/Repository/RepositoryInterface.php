@@ -7,13 +7,6 @@ use FLE\JsonHydrator\Entity\EntityInterface;
 interface RepositoryInterface
 {
     /**
-     * @param string|int $pkValue
-     *
-     * @return EntityInterface
-     */
-    public function reference($pkValue): EntityInterface;
-
-    /**
      * @param EntityInterface $entity
      *
      * @return EntityInterface

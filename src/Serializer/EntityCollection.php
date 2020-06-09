@@ -9,26 +9,20 @@ use LogicException;
 use Metadata\MetadataFactory;
 use Ramsey\Uuid\Uuid;
 use ReflectionClass;
+use ReflectionException;
 use function get_class;
 use function is_array;
 use function is_object;
 
 class EntityCollection
 {
-    /**
-     * @var MetadataFactory
-     */
-    protected $metadataFactory;
+    protected MetadataFactory $metadataFactory;
+    protected array $collection = [];
 
     public function __construct(MetadataFactory $metadataFactory)
     {
         $this->metadataFactory = $metadataFactory;
     }
-
-    /**
-     * @var array
-     */
-    protected $collection = [];
 
     public function get(string $class, array $pkey): ?EntityInterface
     {
@@ -92,9 +86,9 @@ class EntityCollection
 
     /**
      * @param object|array|string|int $object
-     * @param string                  $className
      *
      * @return string[]|int[]
+     * @throws ReflectionException
      */
     public function getPk($object, string $className = null): array
     {
@@ -107,27 +101,11 @@ class EntityCollection
             throw new LogicException('the argument $className of method EntityCollection::getPk must be defined if first argument is an array');
         }
 
-        if (is_object($object)) {
-            if ($object instanceof UuidEntityInterface) {
-                $pkey['uuid'] = $object->getUuid();
-            } elseif ($object instanceof IdEntityInterface) {
-                $pkey['id'] = $object->getId();
-            } else {
-                throw new LogicException('You must pass "IdEntityInterface" or "UuidEntityInterface"');
-            }
+        if (is_object($object) && $object instanceof EntityInterface) {
+            $pkey['id'] = $object->getId();
         } else {
             $reflexion = new ReflectionClass($className);
-            if ($reflexion->implementsInterface(UuidEntityInterface::class)) {
-                if (is_array($object)) {
-                    if (!isset($object['uuid'])) {
-                        $pkey['uuid'] = null;
-                    } else {
-                        $pkey['uuid'] = $object['uuid'];
-                    }
-                } else {
-                    $pkey['uuid'] = $object;
-                }
-            } elseif ($reflexion->implementsInterface(IdEntityInterface::class)) {
+            if ($reflexion->isSubclassOf(EntityInterface::class)) {
                 if (is_array($object)) {
                     if (!isset($object['id'])) {
                         $pkey['id'] = null;
@@ -138,14 +116,14 @@ class EntityCollection
                     $pkey['id'] = $object;
                 }
             } else {
-                throw new LogicException('You must pass "IdEntityInterface" or "UuidEntityInterface"');
+                throw new LogicException('You must pass "EntityInterface"');
             }
         }
 
         return $pkey;
     }
 
-    protected function getKey(string $class, array $pkey): string
+    protected function getKey(string $class, array $pkey): ?string
     {
         if (empty($pkey)) {
             return null;
@@ -168,7 +146,7 @@ class EntityCollection
      *
      * @return string|int|null
      *
-     * @throws PersistException
+     * @throws PersistException|ReflectionException
      */
     public function persist(EntityInterface $object)
     {
@@ -179,7 +157,6 @@ class EntityCollection
                     $pkName        = key($pkey);
                     $uuid          = Uuid::uuid4()->toString();
                     $pkey[$pkName] = $uuid;
-                    $object->setUuid($uuid);
                 }
 
                 $this->set($object, $pkey);
@@ -197,11 +174,9 @@ class EntityCollection
     }
 
     /**
-     * @param EntityInterface $object
-     *
      * @return string|int|null
      *
-     * @throw DetachException
+     * @throws ReflectionException
      */
     public function detach(EntityInterface $object)
     {
@@ -220,29 +195,5 @@ class EntityCollection
         }
 
         return null;
-    }
-
-    /**
-     * @param string $className
-     * @param array  $pkey
-     *
-     * @return EntityInterface
-     */
-    public function getReference(string $className, array $pkey): EntityInterface
-    {
-        $entity = $this->get($className, $pkey);
-        if ($entity === null) {
-            /** @var EntityInterface $entity */
-            $entity = new $className();
-            if ($entity instanceof UuidEntityInterface) {
-                $entity->setUuid($pkey['uuid']);
-            } elseif ($entity instanceof IdEntityInterface) {
-                $entity->setId($pkey['id']);
-            } else {
-                throw new LogicException('You must pass "IdEntityInterface" or "UuidEntityInterface"');
-            }
-        }
-
-        return $entity;
     }
 }

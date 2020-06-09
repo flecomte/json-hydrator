@@ -6,10 +6,7 @@ use DateTime;
 
 trait ImportedAtEntity
 {
-    /**
-     * @var DateTime
-     */
-    protected $importedAt;
+    protected DateTime $importedAt;
 
     /**
      * @return DateTime

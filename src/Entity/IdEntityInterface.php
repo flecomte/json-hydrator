@@ -2,17 +2,14 @@
 
 namespace FLE\JsonHydrator\Entity;
 
-interface IdEntityInterface extends EntityInterface, DuplicateInterface
+interface IdEntityInterface extends EntityInterface
 {
-    /**
-     * @return int
-     */
     public function getId(): ?int;
+
+    public function setId(int $id);
 
     /**
      * @param int $id
-     *
-     * @return IdEntityInterface
      */
-    public function setId(int $id);
+    static function getReference($id): self;
 }

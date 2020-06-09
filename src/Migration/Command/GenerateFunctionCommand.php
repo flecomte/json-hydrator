@@ -13,10 +13,7 @@ class GenerateFunctionCommand extends Command
 {
     protected static $defaultName = 'migration:generate:request';
 
-    /**
-     * @var MigrationFunctions
-     */
-    private $migrationFunctions;
+    private MigrationFunctions $migrationFunctions;
 
     /**
      * GenerateFileCommand constructor.
@@ -36,7 +33,7 @@ class GenerateFunctionCommand extends Command
             ->addArgument('request', InputArgument::REQUIRED, 'Name of request');
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $table = new Table($output);
         $table->setHeaderTitle('Generated files');
@@ -45,5 +42,7 @@ class GenerateFunctionCommand extends Command
             $table->addRow([$filename]);
         }
         $table->render();
+
+        return 0;
     }
 }
