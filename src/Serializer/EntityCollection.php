@@ -24,7 +24,7 @@ class EntityCollection
         $this->metadataFactory = $metadataFactory;
     }
 
-    public function get(string $class, array $pkey): ?EntityInterface
+    public function get(string $class, ?array $pkey): ?EntityInterface
     {
         $key = $this->getKey($class, $pkey);
 
@@ -123,9 +123,9 @@ class EntityCollection
         return $pkey;
     }
 
-    protected function getKey(string $class, array $pkey): ?string
+    protected function getKey(string $class, ?array $pkey): ?string
     {
-        if (empty($pkey)) {
+        if ($pkey === null || empty($pkey)) {
             return null;
         }
         $key = $class.'$$';

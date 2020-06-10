@@ -6,13 +6,13 @@ use Doctrine\Instantiator\Exception\ExceptionInterface;
 use Doctrine\Instantiator\Instantiator;
 use FLE\JsonHydrator\Entity\EntityInterface;
 use FLE\JsonHydrator\Entity\IdEntityInterface;
-use FLE\JsonHydrator\Entity\UuidEntityInterface;
+use FLE\JsonHydrator\Entity\TypeInterface;
 use JMS\Serializer\Construction\ObjectConstructorInterface;
 use JMS\Serializer\DeserializationContext;
 use JMS\Serializer\Metadata\ClassMetadata;
 use JMS\Serializer\Visitor\DeserializationVisitorInterface;
+use ReflectionClass;
 use ReflectionException;
-use function current;
 use function in_array;
 
 class UnserializeObjectConstructor implements ObjectConstructorInterface
@@ -48,14 +48,22 @@ class UnserializeObjectConstructor implements ObjectConstructorInterface
         if ($data === null || in_array('clone', $type['params']) || $persist === false) {
             return $this->getInstantiator()->instantiate($metadata->name);
         }
-        $pk = $this->entityCollection->getPk($data, $type['name']);
-        /* Check if entity is already exist*/
-        if (empty($pk) || current($pk) === null || null === $object = $this->entityCollection->get($metadata->name, $pk)) {
-            /** @var EntityInterface $object */
+        /* $type['name'] is the class name (FQN) */
+        $reflexion = new ReflectionClass($type['name']);
+        if (!$reflexion->isSubclassOf(TypeInterface::class)) {
+            $pk = $this->entityCollection->getPk($data, $type['name']);
+            /* Get already exist entity or return null */
+            $object = $this->entityCollection->get($metadata->name, $pk);
+        }
+
+        if (!isset($object) || null === $object) {
+            /** @var EntityInterface|TypeInterface $object */
             $object = $this->getInstantiator()->instantiate($metadata->name);
-            /* Set the PK to the new Entity and put it into the EntityCollection */
-            $newPk = self::setPk($object, $data);
-            $this->entityCollection->set($object, $newPk);
+            if ($object instanceof EntityInterface) {
+                /* Set the PK to the new Entity and put it into the EntityCollection */
+                $newPk = self::setPk($object, $data);
+                $this->entityCollection->set($object, $newPk);
+            }
         }
 
         return $object;
