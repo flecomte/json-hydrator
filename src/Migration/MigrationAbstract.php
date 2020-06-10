@@ -8,7 +8,7 @@ use function file_get_contents;
 
 abstract class MigrationAbstract
 {
-    protected static int $version;
+    protected static ?int $version = null;
     protected ?string $requestMigrationDirectory;
     protected Connection $connection;
     protected LoggerInterface $logger;
