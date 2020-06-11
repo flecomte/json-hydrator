@@ -130,6 +130,30 @@ abstract class AbstractRepository implements RepositoryInterface
     }
 
     /**
+     * @return PDOStatement|bool|void
+     */
+    protected function preparefunction(string $functionName, array $params = [])
+    {
+        if (!preg_match('/^[a-zA-Z_]+[a-zA-Z0-9_]*$/', $functionName)) {
+            throw new LogicException('bad function name');
+        }
+
+        $argsNames = array_keys($params);
+        $functionNamedParams = array_map(fn($key) => "$key => :$key", $argsNames);
+        $functionParamsAsString = join(', ', $functionNamedParams);
+        $request = "SELECT $functionName($functionParamsAsString);";
+        $stmt = $this->connection->prepare($request);
+
+        preg_match('/[^\\\]+$/', get_class($this), $matches);
+        $shortName = $matches[0];
+        $args = join(', ', $argsNames);
+        $stmt->setName("$shortName::$functionName($args)");
+        $stmt->bindParams($params);
+
+        return $stmt;
+    }
+
+    /**
      * @param mixed $value
      *
      * @throws NotFoundException

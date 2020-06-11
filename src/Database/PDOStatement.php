@@ -75,8 +75,19 @@ class PDOStatement extends \PDOStatement
 
     public function bindParam($parameter, &$variable, $dataType = PDO::PARAM_STR, $length = null, $driverOptions = null)
     {
+        if ($variable instanceof EntityInterface) {
+            $this->entityCollection->persist($variable);
+
+            preg_match('/[^\\\]+$/', get_class($variable), $matches);
+            $shortName = $matches[0];
+            $sc = new SerializationContext();
+            $sc->setGroups($shortName);
+
+            $variable = $this->serializer->serialize($variable, 'json', $sc);
+        }
+
         $this->params[$parameter] = $variable;
-        parent::bindParam($parameter, $variable, $dataType, $length, $driverOptions);
+        return parent::bindParam($parameter, $variable, $dataType, $length, $driverOptions);
     }
 
     public function bindValue($parameter, $variable, $dataType = PDO::PARAM_STR)
@@ -87,10 +98,8 @@ class PDOStatement extends \PDOStatement
 
     /**
      * bind multiple parameters.
-     *
-     * @param $parameters
      */
-    public function bindParams($parameters)
+    public function bindParams(array $parameters)
     {
         foreach ($parameters as $key => $parameter) {
             $this->bindParam($key, $parameter);
