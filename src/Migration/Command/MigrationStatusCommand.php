@@ -19,20 +19,9 @@ class MigrationStatusCommand extends Command
 {
     protected static $defaultName = 'migration:status';
 
-    /**
-     * @var Migration
-     */
-    private $migration;
-
-    /**
-     * @var MigrationFunctions
-     */
-    private $migrationFunctions;
-
-    /**
-     * @var Connection
-     */
-    private $connection;
+    private Migration $migration;
+    private MigrationFunctions $migrationFunctions;
+    private Connection $connection;
 
     /**
      * MigrationStatusCommand constructor.
@@ -64,9 +53,9 @@ class MigrationStatusCommand extends Command
 
         foreach ($migrations as $filename => $infos) {
             if ($infos['executed']) {
-                $status = '<info>executed</info>';
+                $status = '<info>Executed</info>';
             } else {
-                $status     = '<error>not executed</error>';
+                $status     = '<error>Not executed</error>';
                 $isUpToDate = false;
             }
 
@@ -85,7 +74,7 @@ class MigrationStatusCommand extends Command
             } elseif ($infos['down'] === true || $infos['down'] <= -1) {
                 $down = '<info>SQL is valid</info>';
             } elseif ($infos['version'] === 1) {
-                $down       = '<comment>Missing</comment>';
+                $down       = '<error>Missing</error>';
                 $isUpToDate = false;
             } else {
                 $down       = '<error>Missing</error>';
@@ -122,13 +111,13 @@ class MigrationStatusCommand extends Command
         foreach ($migrations as $filename => $infos) {
             if ($infos['status'] === null) {
                 $status     = '<info>Is up to date</info>';
-                $valitation = '<info>Skip</info>';
+                $valitation = '<comment>Skip</comment>';
             } elseif ($infos['status'] === false) {
-                $status     = '';
-                $valitation = '<error>SQL Error</error>';
+                $status     = '<error>On Error</error>';
+                $valitation = '<error>SQL fail</error>';
                 $isUpToDate = false;
             } elseif ($infos['status'] === +1) {
-                $status     = '<error>Need Update</error>';
+                $status     = '<error>Need Creation</error>';
                 $valitation = '<info>Valid for creation</info>';
                 $isUpToDate = false;
             } elseif ($infos['status'] === +2) {
@@ -137,7 +126,7 @@ class MigrationStatusCommand extends Command
                 $isUpToDate = false;
             } elseif ($infos['status'] === -1) {
                 $status     = '<error>Need Remove</error>';
-                $valitation = '<info>SQL is valid for delete</info>';
+                $valitation = '<info>Valid for remove</info>';
                 $isUpToDate = false;
             } else {
                 $status     = '<comment>Skip test</comment>';
