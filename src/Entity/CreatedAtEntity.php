@@ -6,24 +6,18 @@ use DateTime;
 
 trait CreatedAtEntity
 {
-    /**
-     * @var DateTime
-     */
-    protected $createdAt;
+    protected DateTime $createdAt;
 
-    /**
-     * @return DateTime
-     */
+    public function __construct()
+    {
+        $this->createdAt = new DateTime();
+    }
+
     public function getCreatedAt(): ?DateTime
     {
         return $this->createdAt;
     }
 
-    /**
-     * @param DateTime $createdAt
-     *
-     * @return CreatedAtEntity
-     */
     public function setCreatedAt(DateTime $createdAt = null): self
     {
         $this->createdAt = $createdAt ?? new DateTime();

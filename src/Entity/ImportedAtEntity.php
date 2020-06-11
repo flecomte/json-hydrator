@@ -6,22 +6,14 @@ use DateTime;
 
 trait ImportedAtEntity
 {
-    protected DateTime $importedAt;
+    protected ?DateTime $importedAt = null;
 
-    /**
-     * @return DateTime
-     */
-    public function getImportedAt(): DateTime
+    public function getImportedAt(): ?DateTime
     {
         return $this->importedAt;
     }
 
-    /**
-     * @param DateTime $importedAt
-     *
-     * @return ImportedAtEntity
-     */
-    public function setImportedAt(DateTime $importedAt)
+    public function setImportedAt(DateTime $importedAt): self
     {
         $this->importedAt = $importedAt;
 

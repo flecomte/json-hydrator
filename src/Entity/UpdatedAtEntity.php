@@ -6,19 +6,16 @@ use DateTime;
 
 trait UpdatedAtEntity
 {
-    /**
-     * @var DateTime
-     */
-    protected $updatedAt;
+    protected DateTime $updatedAt;
 
-    public function getUpdatedAt(): DateTime
+    public function getUpdatedAt(): ?DateTime
     {
         return $this->updatedAt;
     }
 
-    public function setUpdatedAt(DateTime $updatedAt = null): self
+    public function setUpdatedAt(DateTime $updatedAt): self
     {
-        $this->updatedAt = $updatedAt ?? new DateTime();
+        $this->updatedAt = $updatedAt;
 
         return $this;
     }

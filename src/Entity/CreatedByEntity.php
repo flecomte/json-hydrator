@@ -13,11 +13,6 @@ trait CreatedByEntity
         return $this->createdBy;
     }
 
-    /**
-     * @param UserInterface $createdBy
-     *
-     * @return CreatedByEntity
-     */
     public function setCreatedBy(UserInterface $createdBy): self
     {
         $this->createdBy = $createdBy;
