@@ -16,7 +16,7 @@ trait UuidEntity
     /**
      * @param string $id
      */
-    public static function getReference($id): EntityInterface
+    public static function getReference($id): self
     {
         $n = new self();
         $n->id = $id;
