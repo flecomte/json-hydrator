@@ -196,7 +196,7 @@ class PDOStatement extends \PDOStatement
      */
     public function fetchEntities(string $fqn, int &$count = null)
     {
-        $this->execute();
+        $this->execute($this->params);
         $all = $this->fetch();
         $this->logResult($all);
         $count = $all['count'] ?? null;
