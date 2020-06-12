@@ -141,7 +141,7 @@ abstract class AbstractRepository implements RepositoryInterface
         $argsNames = array_keys($params);
         $functionNamedParams = array_map(fn($key) => "\"$key\" => :$key", $argsNames);
         $functionParamsAsString = join(', ', $functionNamedParams);
-        $request = "SELECT $functionName($functionParamsAsString);";
+        $request = "SELECT * from $functionName($functionParamsAsString);";
         $stmt = $this->connection->prepare($request);
 
         preg_match('/[^\\\]+$/', get_class($this), $matches);
