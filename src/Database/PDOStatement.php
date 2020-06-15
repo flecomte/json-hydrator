@@ -31,7 +31,7 @@ class PDOStatement extends \PDOStatement
     private bool $isExecuted = false;
     private ?LoggerInterface $logger;
     private float $duration;
-    private string $name;
+    private ?string $name = null;
 
     protected function __construct(?Stopwatch $stopwatch, Serializer $serializer, EntityCollection $entityCollection, ?LoggerInterface $logger)
     {
@@ -62,7 +62,7 @@ class PDOStatement extends \PDOStatement
                 'query'  => $this->queryString,
                 'params' => $this->params,
             ]);
-            if ($this->name) {
+            if ($this->name == null) {
                 throw new PDOException("{$e->getMessage()}\n\n(Query name: {$this->name})", 0, $e);
             }
             throw $e;

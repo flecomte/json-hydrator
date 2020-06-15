@@ -147,77 +147,119 @@ class MigrationFunctions extends MigrationAbstract
     protected function functionsUp(?array &$list = [], ?string &$error = null): void
     {
         $this->createTable();
-        $version           = $this->getNextVersion();
         $functionsContent  = $this->getFunctionsContent();
-        $executedFunctions = $this->getExecutedFunctions();
+        $notYetPassed = [];
         foreach ($functionsContent as $filename => $newFunctionContent) {
-            $alreadyExist  = isset($executedFunctions[$filename]);
-            $newDefinition = $this->getDefinition($newFunctionContent);
-
-            /* Check if OR REPLACE exist */
-            if (!preg_match('`\s+OR\s+REPLACE\s+`mi', $newFunctionContent)) {
-                $list[$filename] = false;
-                $this->logger->error("The function must be declared with 'OR REPLACE': $filename");
-                throw new BrokenMigrationException("The function must be declared with 'OR REPLACE': $filename", $filename);
-            }
-
-            /* Check if only one function exist per file */
-            if (preg_match_all('`create .*(procedure|function) *(?<name>[^\(\s]+)\s*`mi', $newFunctionContent) > 1) {
-                $list[$filename] = false;
-                $error           = "Only one function per file must be declared in $filename";
-                $this->logger->error($error);
-                throw new BrokenMigrationException($error, $filename);
-            }
-
-            /* If function already exist in DB */
-            if ($alreadyExist) {
-                $oldFunctionContent = $executedFunctions[$filename]['up'];
-                $oldDefinition      = $this->getDefinition($oldFunctionContent);
-
-                /* Execute ONLY if function has changed (definition and content) */
-                if ($oldFunctionContent === $newFunctionContent) {
-                    $list[$filename] = null;
-                    continue;
-                }
-
-                /*
-                 * If definition has change, is imposible to replace it.
-                 * So, try to remove and recreate the function
-                 */
-                if ($oldDefinition != $newDefinition) {
-                    $this->logger->warning("Remove and recreate:\n    $oldDefinition\n    $newDefinition");
-                    $deleteSQL = $this->getDeleteFunctionRequest($oldFunctionContent);
-                    try {
-                        $this->connection->exec($deleteSQL);
-                    } catch (PDOException $e) {
-                        $list[$filename] = false;
-                        $error           = "Remove for recreate function IMPOSIBLE: $oldDefinition";
-                        $this->logger->error($error, ['message' => $e->getMessage()]);
-                        throw new BrokenMigrationException($error, $filename, $e);
+            $notYetPassed[$filename] = $newFunctionContent;
+        }
+        /* If one function not pass, retry */
+        $successAtThisPass = false;
+        while ($successAtThisPass = true && count($notYetPassed) > 0) {
+            $successAtThisPass = false;
+            foreach ($notYetPassed as $filename => $newFunctionContent) {
+                $this->connection->beginTransaction();
+                try {
+                    $this->logger->debug("$filename : Try to execute");
+                    $this->functionUp($filename, $newFunctionContent, $list, $error);
+                    unset($notYetPassed[$filename]);
+                    $successAtThisPass = true;
+                    $this->logger->debug("$filename : passed");
+                    $this->connection->commit();
+                } catch (BrokenMigrationException $e) {
+                    $this->logger->debug("$filename : Fail with errorcode {$e->getPrevious()->getCode()}");
+                    if ($e->getPrevious()->getCode() == '42883') {
+                        $this->logger->debug("$filename : is marked to retry for the next pass");
+                        $notYetPassed[$filename] = $newFunctionContent;
+                        $this->connection->rollBack();
+                    } else {
+                        throw $e;
                     }
                 }
             }
+        }
+        if (count($notYetPassed) == 0) {
+            $error = null;
+        }
+    }
 
-            /* Create or replace function */
-            try {
-                $deleteSQL = $this->getDeleteFunctionRequest($newFunctionContent);
-                $this->connection->exec($newFunctionContent);
-                $this->connection->prepare(file_get_contents($this->requestMigrationDirectory.'/upsertFunctions.sql'))
-                    ->execute([
-                        ':filename'   => $filename,
-                        ':definition' => $newDefinition,
-                        ':up'         => $newFunctionContent,
-                        ':down'       => $deleteSQL,
-                        ':version'    => $version,
-                    ]);
+    /**
+     * @throws BrokenMigrationException
+     */
+    protected function functionUp(
+        string $filename,
+        string $newFunctionContent,
+        ?array &$list = [],
+        ?string &$error = null
+    ): void
+    {
+        $version           = $this->getNextVersion();
+        $executedFunctions = $this->getExecutedFunctions();
+        $alreadyExist  = isset($executedFunctions[$filename]);
+        $newDefinition = $this->getDefinition($newFunctionContent);
 
-                $list[$filename] = $alreadyExist ? +2 : +1;
-            } catch (PDOException $e) {
-                $list[$filename] = false;
-                $newDefinition   = $newDefinition ?? $this->getDefinition($newFunctionContent);
-                $error           = "The function $newDefinition cant be create/replaced. \n\n".$e->getMessage();
-                throw new BrokenMigrationException($error, $filename, $e);
+        /* Check if OR REPLACE exist */
+        if (!preg_match('`\s+OR\s+REPLACE\s+`mi', $newFunctionContent)) {
+            $list[$filename] = false;
+            $this->logger->error("The function must be declared with 'OR REPLACE': $filename");
+            throw new BrokenMigrationException("The function must be declared with 'OR REPLACE': $filename", $filename);
+        }
+
+        /* Check if only one function exist per file */
+        if (preg_match_all('`create .*(procedure|function) *(?<name>[^\(\s]+)\s*`mi', $newFunctionContent) > 1) {
+            $list[$filename] = false;
+            $error           = "Only one function per file must be declared in $filename";
+            $this->logger->error($error);
+            throw new BrokenMigrationException($error, $filename);
+        }
+
+        /* If function already exist in DB */
+        if ($alreadyExist) {
+            $oldFunctionContent = $executedFunctions[$filename]['up'];
+            $oldDefinition      = $this->getDefinition($oldFunctionContent);
+
+            /* Execute ONLY if function has changed (definition and content) */
+            if ($oldFunctionContent === $newFunctionContent) {
+                $list[$filename] = null;
+                return;
             }
+
+            /*
+             * If definition has change, is imposible to replace it.
+             * So, try to remove and recreate the function
+             */
+            if ($oldDefinition != $newDefinition) {
+                $this->logger->warning("Remove and recreate:\n    $oldDefinition\n    $newDefinition");
+                $deleteSQL = $this->getDeleteFunctionRequest($oldFunctionContent);
+                try {
+                    $this->connection->exec($deleteSQL);
+                } catch (PDOException $e) {
+                    $list[$filename] = false;
+                    $error           = "Remove for recreate function IMPOSIBLE: $oldDefinition";
+                    $this->logger->error($error, ['message' => $e->getMessage()]);
+                    throw new BrokenMigrationException($error, $filename, $e);
+                }
+            }
+        }
+
+        /* Create or replace function */
+        try {
+            $deleteSQL = $this->getDeleteFunctionRequest($newFunctionContent);
+            $this->connection->exec($newFunctionContent);
+            $this->connection->prepare(file_get_contents($this->requestMigrationDirectory.'/upsertFunctions.sql'))
+                ->execute([
+                    ':filename'   => $filename,
+                    ':definition' => $newDefinition,
+                    ':up'         => $newFunctionContent,
+                    ':down'       => $deleteSQL,
+                    ':version'    => $version,
+                ]);
+
+            $list[$filename] = $alreadyExist ? +2 : +1;
+        } catch (PDOException $e) {
+            $list[$filename] = false;
+            $newDefinition   = $newDefinition ?? $this->getDefinition($newFunctionContent);
+            $error           = "The function $newDefinition cant be create/replaced. \n\n".$e->getMessage();
+            throw new BrokenMigrationException($error, $filename, $e);
         }
     }
 
