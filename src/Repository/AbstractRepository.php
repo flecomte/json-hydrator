@@ -20,10 +20,6 @@ abstract class AbstractRepository implements RepositoryInterface
 {
     protected Connection $connection;
     protected SerializerInterface $serializer;
-    /**
-     * Short name class
-     */
-    protected string $entityName;
     protected EntityCollection $entityCollection;
     protected bool $cache = false;
     protected string $shortName;
@@ -63,13 +59,11 @@ abstract class AbstractRepository implements RepositoryInterface
         return $pager;
     }
 
-    public function __construct(Connection $connection, SerializerInterface $serializer, string $entityName, EntityCollection $entityCollection, string $requestDirectory)
+    public function __construct(Connection $connection, SerializerInterface $serializer, string $shortName, EntityCollection $entityCollection, string $requestDirectory)
     {
-        preg_match('/[^\\\]+$/', $entityName, $matches);
-        $this->shortName        = $matches[0];
+        $this->shortName        = $shortName;
         $this->connection       = $connection;
         $this->serializer       = $serializer;
-        $this->entityName       = $entityName;
         $this->entityCollection = $entityCollection;
         $this->requestDirectory = $requestDirectory;
     }

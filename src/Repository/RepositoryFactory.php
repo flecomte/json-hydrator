@@ -22,11 +22,28 @@ class RepositoryFactory
         $this->requestDirectory = $requestDirectory;
     }
 
-    public function getRepository(string $fqn): RepositoryInterface
+    public function getRepository(string $fqn, string $shortName = null): RepositoryInterface
     {
+        /* If fqn is directly a repository name */
+        if (class_exists($fqn)) {
+            $class = new \ReflectionClass($fqn);
+            if ($class->isSubclassOf(AbstractRepository::class)) {
+                if ($shortName === null) {
+                    preg_match('/([^\\\]+)(Repository)?$/', $fqn, $matches);
+                    $shortName = $matches[1];
+                }
+                return new $fqn($this->connection, $this->serializer, $shortName, $this->entityCollection, $this->requestDirectory);
+            }
+        }
+
+        /* If $fqn is an entity name */
         $var = (preg_replace('/\\\\Entity\\\\/', '\\Repository\\', $fqn).'Repository');
         if (class_exists($var)) {
-            return new $var($this->connection, $this->serializer, $fqn, $this->entityCollection, $this->requestDirectory);
+            if ($shortName === null) {
+                preg_match('/([^\\\]+)(Entity)?$/', $fqn, $matches);
+                $shortName = $matches[1];
+            }
+            return new $var($this->connection, $this->serializer, $shortName, $this->entityCollection, $this->requestDirectory);
         } else {
             throw new NoRepositoryFoundException($fqn);
         }
