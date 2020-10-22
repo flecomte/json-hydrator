@@ -12,9 +12,9 @@ class RepositoryFactory
     protected Connection $connection;
     protected SerializerInterface $serializer;
     private EntityCollection $entityCollection;
-    private string $requestDirectory;
+    private ?string $requestDirectory;
 
-    public function __construct(Connection $connection, SerializerInterface $serializer, EntityCollection $entityCollection, string $requestDirectory)
+    public function __construct(Connection $connection, SerializerInterface $serializer, EntityCollection $entityCollection, ?string $requestDirectory = null)
     {
         $this->connection       = $connection;
         $this->serializer       = $serializer;

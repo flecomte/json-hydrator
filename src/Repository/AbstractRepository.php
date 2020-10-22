@@ -23,7 +23,7 @@ abstract class AbstractRepository implements RepositoryInterface
     protected EntityCollection $entityCollection;
     protected bool $cache = false;
     protected string $shortName;
-    private string $requestDirectory;
+    private ?string $requestDirectory;
 
     /**
      * @throws NotFoundException
@@ -59,7 +59,7 @@ abstract class AbstractRepository implements RepositoryInterface
         return $pager;
     }
 
-    public function __construct(Connection $connection, SerializerInterface $serializer, string $shortName, EntityCollection $entityCollection, string $requestDirectory)
+    public function __construct(Connection $connection, SerializerInterface $serializer, string $shortName, EntityCollection $entityCollection, ?string $requestDirectory = null)
     {
         $this->shortName        = $shortName;
         $this->connection       = $connection;
@@ -102,6 +102,9 @@ abstract class AbstractRepository implements RepositoryInterface
      */
     protected function getRequest(string $requestName)
     {
+        if ($this->requestDirectory === null) {
+            throw new LogicException("You must define a request directory to use requests");
+        }
         $fileName = $this->requestDirectory."/$this->shortName/$requestName.sql";
         if (!file_exists($fileName)) {
             throw new LogicException("You must implement the request \"$requestName\" for entity \"$this->shortName\" in file \"$fileName\"");
