@@ -16,13 +16,7 @@ use function is_object;
 
 class EntityCollection
 {
-    protected MetadataFactory $metadataFactory;
     protected array $collection = [];
-
-    public function __construct(MetadataFactory $metadataFactory)
-    {
-        $this->metadataFactory = $metadataFactory;
-    }
 
     public function get(string $class, ?array $pkey): ?EntityInterface
     {
