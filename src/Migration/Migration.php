@@ -47,7 +47,7 @@ class Migration extends MigrationAbstract
      * @param LoggerInterface $logger
      * @param string          $dateFormat
      */
-    public function __construct(Connection $connection, string $migrationDirectory, ?string $requestMigrationDirectory, LoggerInterface $logger, string $dateFormat = 'Y-m/Y-m-d_H-i-s')
+    public function __construct(Connection $connection, string $migrationDirectory, ?string $requestMigrationDirectory = null, ?LoggerInterface $logger = null, string $dateFormat = 'Y-m/Y-m-d_H-i-s')
     {
         parent::__construct($connection, $requestMigrationDirectory, $logger);
         $this->migrationDirectory = $migrationDirectory;
