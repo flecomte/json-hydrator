@@ -4,6 +4,7 @@ namespace FLE\JsonHydrator\Migration;
 
 use FLE\JsonHydrator\Database\Connection;
 use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use function file_get_contents;
 
 abstract class MigrationAbstract
@@ -21,18 +22,18 @@ abstract class MigrationAbstract
     /**
      * Migration constructor.
      *
-     * @param Connection      $connection
-     * @param string          $requestMigrationDirectory
-     * @param LoggerInterface $logger
+     * @param Connection $connection
+     * @param string|null $requestMigrationDirectory
+     * @param LoggerInterface|null $logger
      */
-    public function __construct(Connection $connection, ?string $requestMigrationDirectory, LoggerInterface $logger)
+    public function __construct(Connection $connection, ?string $requestMigrationDirectory = null, ?LoggerInterface $logger = null)
     {
         if ($requestMigrationDirectory === null || empty($requestMigrationDirectory)) {
             $requestMigrationDirectory = __DIR__.'/sql/request';
         }
         $this->requestMigrationDirectory   = $requestMigrationDirectory;
         $this->connection                  = $connection;
-        $this->logger                      = $logger;
+        $this->logger                      = $logger ?? new NullLogger();
     }
 
     /**

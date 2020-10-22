@@ -41,7 +41,7 @@ class MigrationFunctions extends MigrationAbstract
      * @param string          $requestMigrationDirectory
      * @param LoggerInterface $logger
      */
-    public function __construct(Connection $connection, string $requestDirectory, string $functionsDirectory, ?string $requestMigrationDirectory, LoggerInterface $logger)
+    public function __construct(Connection $connection, string $requestDirectory, string $functionsDirectory, ?string $requestMigrationDirectory = null, ?LoggerInterface $logger = null)
     {
         parent::__construct($connection, $requestMigrationDirectory, $logger);
         $this->functionsDirectory = $functionsDirectory;
