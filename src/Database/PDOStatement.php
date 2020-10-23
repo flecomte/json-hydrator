@@ -55,7 +55,7 @@ class PDOStatement extends \PDOStatement
         $startTime        = microtime(true);
         try {
             $this->stopwatch && $this->stopwatch->start('sql.query');
-            $result = parent::execute($inputParameters);
+            $result = parent::execute($inputParameters ?? $this->params);
             $this->stopwatch && $this->stopwatch->stop('sql.query');
         } catch (PDOException $e) {
             $this->logger && $this->logger->critical($e->getMessage(), [
@@ -176,7 +176,7 @@ class PDOStatement extends \PDOStatement
      */
     public function fetchAsArray()
     {
-        $this->execute();
+        $this->execute($this->params);
         $json = $this->fetchColumn();
         $this->logResult($json);
         if ($json === false || $json === null) {
